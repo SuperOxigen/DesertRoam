@@ -29,19 +29,20 @@ public:
     virtual bool execute(std::ostream &, std::istream &);
 };
 
-class ShopAction : public TileAction
+class StoreAction : public TileAction
 {
     Player& d_player;
 public:
-    ShopAction(Player&);
+    StoreAction(Player&);
     virtual bool execute(std::ostream &, std::istream &);
 };
 
 class GoldMineAction : public TileAction
 {
     Player& d_player;
+    unsigned int & d_gold_resevres;
 public:
-    GoldMineAction(Player&);
+    GoldMineAction(Player&, unsigned int &);
     virtual bool execute(std::ostream &, std::istream &);
 };
 

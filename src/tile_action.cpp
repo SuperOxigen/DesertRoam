@@ -1,5 +1,6 @@
 #include "tile_action.h"
 
+
 using std::ostream;
 using std::istream;
 
@@ -8,8 +9,6 @@ BanditAction::BanditAction(Player & player):
 
 bool BanditAction::execute(ostream& os, istream& is)
 {
-
-
     return false;
 }
 
@@ -21,16 +20,16 @@ bool OasisAction::execute(ostream& os, istream& is)
     return false;
 }
 
-ShopAction::ShopAction(Player& player):
+StoreAction::StoreAction(Player& player):
     d_player(player) {}
 
-bool ShopAction::execute(ostream& os, istream& is)
+bool StoreAction::execute(ostream& os, istream& is)
 {
     return false;
 }
 
-GoldMineAction::GoldMineAction(Player& player):
-    d_player(player) {}
+GoldMineAction::GoldMineAction(Player& player, unsigned int & gold_reserves):
+    d_player(player), d_gold_resevres(gold_reserves) {}
 
 bool GoldMineAction::execute(ostream& os, istream& is)
 {

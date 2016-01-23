@@ -6,8 +6,8 @@
 #include <cstdlib>
 #include <memory>
 
-#define MAX_PROB_RESOLUTION 10000
 
+#define MAX_PROB_RESOLUTION 10000
 
 #define MELEE_MAX_LEVEL 10
 #define MELEE_BASE_DAMAGE 2
@@ -21,17 +21,55 @@
 #define HEAL_BASE_HEAL 5
 #define HEAL_BASE_PROB 0.90
 
-static inline double cal_prob(double base, unsigned int level)
-{
-    return 1.0 - pow(1.0 - base, static_cast<double>(level));
-}
+/*
+ * ****  ****  ****  ****  ****
+ * 
+ * Helper Function Declairation
+ * 
+ * ****  ****  ****  ****  ****
+ */
 
+/*------------------------
+ * Function: drand
+ * Parameters: NONE
+ * Returns: Random double [0.0,1.0)
+ * Description:
+ *     Generates a random double from
+ *     0 (inclusive) and 1 (exclusive).
+ *     Has a resolution as specified by
+ *     MAX_PROB_RESOLUTION.
+ *-----------------------*/
 static inline double drand()
 {
     return static_cast<double>(rand() % MAX_PROB_RESOLUTION)/static_cast<double>(MAX_PROB_RESOLUTION);
 }
 
-static inline unsigned int cal_damage(unsigned int base, unsigned int level)
+/*------------------------
+ * Function: calc_prob
+ * Parameters: base  - base probability
+ *             level - level of compounding
+ * Returns: decimal value of probability
+ * Description:
+ *     Calculates a probability that converges to
+ *     1.0 as the level increases.
+ *         p = 1.0 - (1.0 - b) ^ l
+ *-----------------------*/
+static inline double calc_prob(double base, unsigned int level)
+{
+    return 1.0 - pow(1.0 - base, static_cast<double>(level));
+}
+
+/*------------------------
+ * Function: calc_damage
+ * Parameters: base  - base damage
+ *             level - level of compounding
+ * Returns: integer of level's damgage
+ * Description:
+ *     Calaculates the damage that should be done
+ *     for the attack level.
+ *         d = b * (1 + 0.125 * l ^ 2)
+ *-----------------------*/
+static inline unsigned int calc_damage(unsigned int base, unsigned int level)
 {
     return (base * (8 + level * level)) / 8;
 }
@@ -44,7 +82,16 @@ static inline unsigned int cal_damage(unsigned int base, unsigned int level)
  * ****  ****  ****  ****  ****
  */
 
-template<class P>
+/*------------------------
+ * Class: Attack (virtual/abstract)
+ * Description:
+ *     Represents an attack that can be
+ *     performed on a pointer of type Ptr.
+ *
+ *     Intended to be overrided for a 
+ *     specific attack type.
+ *-----------------------*/
+template<class Ptr>
 class Attack
 {
 protected:
@@ -53,62 +100,62 @@ protected:
     unsigned int d_level;
 public:
     Attack(std::string const &);
-    Attack(Attack<P> const &);
-    Attack(Attack<P> &&) = delete;
-    Attack<P> const & operator=(Attack<P> const &) = delete;
-    Attack<P> const & operator=(Attack<P> &&) = delete;
-    virtual Attack<P> * clone() const = 0;
+    Attack(Attack<Ptr> const &);
+    Attack(Attack<Ptr> &&) = delete;
+    Attack<Ptr> const & operator=(Attack<Ptr> const &) = delete;
+    Attack<Ptr> const & operator=(Attack<Ptr> &&) = delete;
+    virtual Attack<Ptr> * clone() const = 0;
     virtual void levelup();
-    virtual bool perform(P) const = 0;
+    virtual bool perform(Ptr) const = 0;
     unsigned int get_level() const;
     std::string get_ability_name() const;
     std::string get_status() const;
 };
 
-template<class P>
-std::ostream & operator<<(std::ostream & os, Attack<P> const & attack)
+template<class Ptr>
+std::ostream & operator<<(std::ostream & os, Attack<Ptr> const & attack)
 {
     os << attack.get_ability_name() << " (lvl " << attack.get_level() << ")";
     return os;
 }
 
-template<class P>
-class MeleeAttack : public Attack<P>
+template<class Ptr>
+class MeleeAttack : public Attack<Ptr>
 {
     unsigned int d_damage;
     double d_probability;
 public:
     MeleeAttack();
-    MeleeAttack(MeleeAttack<P> const &);
-    virtual Attack<P> * clone() const;
+    MeleeAttack(MeleeAttack<Ptr> const &);
+    virtual Attack<Ptr> * clone() const;
     virtual void levelup();
-    virtual bool perform(P) const;
+    virtual bool perform(Ptr) const;
 };
 
-template<class P>
-class RangeAttack : public Attack<P>
+template<class Ptr>
+class RangeAttack : public Attack<Ptr>
 {
     unsigned int d_damage;
     double d_probability;
 public:
     RangeAttack();
-    RangeAttack(RangeAttack<P> const &);
-    virtual Attack<P> * clone() const;
+    RangeAttack(RangeAttack<Ptr> const &);
+    virtual Attack<Ptr> * clone() const;
     virtual void levelup();
-    virtual bool perform(P) const;
+    virtual bool perform(Ptr) const;
 };
 
-template<class P>
-class HealingAttack : public Attack<P>
+template<class Ptr>
+class HealingAttack : public Attack<Ptr>
 {
     unsigned int d_heal;
     double d_probability;
 public:
     HealingAttack();
-    HealingAttack(HealingAttack<P> const &);
-    virtual Attack<P> * clone() const;
+    HealingAttack(HealingAttack<Ptr> const &);
+    virtual Attack<Ptr> * clone() const;
     virtual void levelup();
-    virtual bool perform(P) const;
+    virtual bool perform(Ptr) const;
 };
 
 /*
@@ -119,29 +166,29 @@ public:
  * ****  ****  ****  ****  ****
  */
 
-template<class P>
-Attack<P>::Attack(std::string const & ability_name):
+template<class Ptr>
+Attack<Ptr>::Attack(std::string const & ability_name):
     d_ability_name(ability_name), d_status(""), d_level(1u) {}
 
-template<class P>
-Attack<P>::Attack(Attack<P> const & attack):
+template<class Ptr>
+Attack<Ptr>::Attack(Attack<Ptr> const & attack):
     d_ability_name(attack.d_ability_name), d_status(attack.d_status),
     d_level(attack.d_level) {}
 
-template<class P>
-void Attack<P>::levelup()
+template<class Ptr>
+void Attack<Ptr>::levelup()
 {
     d_level++;
 }
 
-template<class P>
-unsigned int Attack<P>::get_level() const
+template<class Ptr>
+unsigned int Attack<Ptr>::get_level() const
 {
     return d_level;
 }
 
-template<class P>
-std::string Attack<P>::get_status() const
+template<class Ptr>
+std::string Attack<Ptr>::get_status() const
 {
     return d_status;
 }
@@ -154,45 +201,45 @@ std::string Attack<P>::get_status() const
  * ****  ****  ****  ****  ****
  */
 
-template<class P>
-MeleeAttack<P>::MeleeAttack():
-    Attack<P>(std::string("Melee")), d_damage(MELEE_BASE_DAMAGE),
+template<class Ptr>
+MeleeAttack<Ptr>::MeleeAttack():
+    Attack<Ptr>(std::string("Melee")), d_damage(MELEE_BASE_DAMAGE),
     d_probability(MELEE_BASE_PROB) {}
 
-template<class P>
-MeleeAttack<P>::MeleeAttack(MeleeAttack<P> const & mattack):
-    Attack<P>(static_cast<Attack<P>>(mattack)), d_damage(mattack.d_damage),
+template<class Ptr>
+MeleeAttack<Ptr>::MeleeAttack(MeleeAttack<Ptr> const & mattack):
+    Attack<Ptr>(static_cast<Attack<Ptr>>(mattack)), d_damage(mattack.d_damage),
     d_probability(mattack.d_probability) {}
 
-template<class P>
-Attack<P> * MeleeAttack<P>::clone() const
+template<class Ptr>
+Attack<Ptr> * MeleeAttack<Ptr>::clone() const
 {
-    return new MeleeAttack<P>(* this);
+    return new MeleeAttack<Ptr>(* this);
 }
 
-template<class P>
-void MeleeAttack<P>::levelup()
+template<class Ptr>
+void MeleeAttack<Ptr>::levelup()
 {
-    if (Attack<P>::d_level >= MELEE_MAX_LEVEL) return;
-    Attack<P>::levelup();
-    d_damage = cal_damage(MELEE_BASE_DAMAGE, Attack<P>::d_level);
-    d_probability = cal_prob(MELEE_BASE_PROB, Attack<P>::d_level);
+    if (Attack<Ptr>::d_level >= MELEE_MAX_LEVEL) return;
+    Attack<Ptr>::levelup();
+    d_damage = calc_damage(MELEE_BASE_DAMAGE, Attack<Ptr>::d_level);
+    d_probability = calc_prob(MELEE_BASE_PROB, Attack<Ptr>::d_level);
 }
 
-template<class P>
-bool MeleeAttack<P>::perform(P player_ptr) const
+template<class Ptr>
+bool MeleeAttack<Ptr>::perform(Ptr player_ptr) const
 {
     if (d_probability >= drand())
     {
         // Attack sucessfull
-        player_ptr->inventory() -= d_damage;
-        Attack<P>::d_status = "hit";
+        player_ptr->health() -= d_damage;
+        Attack<Ptr>::d_status = "hit";
         return true;
     }
     else
     {
         // Attack fail
-        Attack<P>::d_status = "missed";
+        Attack<Ptr>::d_status = "missed";
         return false;
     }
 }
@@ -205,45 +252,45 @@ bool MeleeAttack<P>::perform(P player_ptr) const
  * ****  ****  ****  ****  ****
  */
 
-template<class P>
-RangeAttack<P>::RangeAttack():
-    Attack<P>(std::string("Range")), d_damage(RANGE_BASE_DAMAGE),
+template<class Ptr>
+RangeAttack<Ptr>::RangeAttack():
+    Attack<Ptr>(std::string("Range")), d_damage(RANGE_BASE_DAMAGE),
     d_probability(RANGE_BASE_PROB) {}
 
-template<class P>
-RangeAttack<P>::RangeAttack(RangeAttack<P> const & rattack):
-    Attack<P>(static_cast<Attack<P>>(rattack)), d_damage(rattack.d_damage),
+template<class Ptr>
+RangeAttack<Ptr>::RangeAttack(RangeAttack<Ptr> const & rattack):
+    Attack<Ptr>(static_cast<Attack<Ptr>>(rattack)), d_damage(rattack.d_damage),
     d_probability(rattack.d_probability) {}
 
-template<class P>
-Attack<P> * RangeAttack<P>::clone() const
+template<class Ptr>
+Attack<Ptr> * RangeAttack<Ptr>::clone() const
 {
-    return new RangeAttack<P>(* this);
+    return new RangeAttack<Ptr>(* this);
 }
 
-template<class P>
-void RangeAttack<P>::levelup()
+template<class Ptr>
+void RangeAttack<Ptr>::levelup()
 {
-    if (Attack<P>::d_level >= RANGE_MAX_LEVEL) return;
-    Attack<P>::levelup();
-    d_damage = cal_damage(RANGE_BASE_DAMAGE, Attack<P>::d_level);
-    d_probability = cal_prob(RANGE_BASE_PROB, Attack<P>::d_level);
+    if (Attack<Ptr>::d_level >= RANGE_MAX_LEVEL) return;
+    Attack<Ptr>::levelup();
+    d_damage = calc_damage(RANGE_BASE_DAMAGE, Attack<Ptr>::d_level);
+    d_probability = calc_prob(RANGE_BASE_PROB, Attack<Ptr>::d_level);
 }
 
-template<class P>
-bool RangeAttack<P>::perform(P player_ptr) const
+template<class Ptr>
+bool RangeAttack<Ptr>::perform(Ptr player_ptr) const
 {
     if (d_probability >= drand())
     {
         // Attack sucessfull
-        player_ptr->inventory() -= d_damage;
-        Attack<P>::d_status = "hit";
+        player_ptr->health() -= d_damage;
+        Attack<Ptr>::d_status = "hit";
         return true;
     }
     else
     {
         // Attack fail
-        Attack<P>::d_status = "missed";
+        Attack<Ptr>::d_status = "missed";
         return false;
     }
 }
@@ -256,64 +303,64 @@ bool RangeAttack<P>::perform(P player_ptr) const
  * ****  ****  ****  ****  ****
  */
 
-template<class P>
-HealingAttack<P>::HealingAttack():
-    Attack<P>(std::string("Healing")), d_heal(HEAL_BASE_HEAL),
+template<class Ptr>
+HealingAttack<Ptr>::HealingAttack():
+    Attack<Ptr>(std::string("Healing")), d_heal(HEAL_BASE_HEAL),
     d_probability(HEAL_BASE_PROB) {}
 
-template<class P>
-HealingAttack<P>::HealingAttack(HealingAttack<P> const & hattack):
-    Attack<P>(static_cast<Attack<P>>(hattack)), d_heal(hattack.d_damage),
+template<class Ptr>
+HealingAttack<Ptr>::HealingAttack(HealingAttack<Ptr> const & hattack):
+    Attack<Ptr>(static_cast<Attack<Ptr>>(hattack)), d_heal(hattack.d_damage),
     d_probability(hattack.d_probability) {}
 
-template<class P>
-Attack<P> * HealingAttack<P>::clone() const
+template<class Ptr>
+Attack<Ptr> * HealingAttack<Ptr>::clone() const
 {
-    return new HealingAttack<P>(* this);
+    return new HealingAttack<Ptr>(* this);
 }
 
-template<class P>
-void HealingAttack<P>::levelup()
+template<class Ptr>
+void HealingAttack<Ptr>::levelup()
 {
-    if (Attack<P>::d_level >= HEAL_MAX_LEVEL) return;
-    Attack<P>::levelup();
-    d_heal = cal_damage(HEAL_BASE_HEAL, Attack<P>::d_level);
-    d_probability = cal_prob(HEAL_BASE_PROB, Attack<P>::d_level);
+    if (Attack<Ptr>::d_level >= HEAL_MAX_LEVEL) return;
+    Attack<Ptr>::levelup();
+    d_heal = calc_damage(HEAL_BASE_HEAL, Attack<Ptr>::d_level);
+    d_probability = calc_prob(HEAL_BASE_PROB, Attack<Ptr>::d_level);
 }
 
-template<class P>
-bool HealingAttack<P>::perform(P player_ptr) const
+template<class Ptr>
+bool HealingAttack<Ptr>::perform(Ptr player_ptr) const
 {
     if (d_probability >= drand())
     {
         // Attack sucessfull
-        player_ptr->inventory() += d_heal;
-        Attack<P>::d_status = "hit";
+        player_ptr->health() += d_heal;
+        Attack<Ptr>::d_status = "hit";
         return true;
     }
     else
     {
         // Attack fail
-        Attack<P>::d_status = "missed";
+        Attack<Ptr>::d_status = "missed";
         return false;
     }
 }
 
 
-template<class P>
+template<class Ptr>
 class AttackSet
 {
-    std::shared_ptr<MeleeAttack<P>> melee_ptr;
-    std::shared_ptr<RangeAttack<P>> range_ptr;
-    std::shared_ptr<HealingAttack<P>> heal_ptr;
+    std::shared_ptr<MeleeAttack<Ptr>> melee_ptr;
+    std::shared_ptr<RangeAttack<Ptr>> range_ptr;
+    std::shared_ptr<HealingAttack<Ptr>> heal_ptr;
 
 public:
     AttackSet();
     AttackSet(AttackSet const &);
 
-    std::shared_ptr<MeleeAttack<P>> melee();
-    std::shared_ptr<RangeAttack<P>> range();
-    std::shared_ptr<HealingAttack<P>> heal();
+    std::shared_ptr<MeleeAttack<Ptr>> melee();
+    std::shared_ptr<RangeAttack<Ptr>> range();
+    std::shared_ptr<HealingAttack<Ptr>> heal();
 
     void new_melee();
     void new_range();
@@ -322,11 +369,11 @@ public:
     // friend std::ostream& operator<<(std::ostream& os, AttackSet const &);
 };
 
-template<class P>
-AttackSet<P>::AttackSet() {}
+template<class Ptr>
+AttackSet<Ptr>::AttackSet() {}
 
-template<class P>
-AttackSet<P>::AttackSet(AttackSet<P> const & attack_set)
+template<class Ptr>
+AttackSet<Ptr>::AttackSet(AttackSet<Ptr> const & attack_set)
 {
     if (attack_set.melee_ptr)
         melee_ptr.reset(attack_set.melee_ptr->clone());
@@ -336,44 +383,44 @@ AttackSet<P>::AttackSet(AttackSet<P> const & attack_set)
         heal_ptr.reset(attack_set.heal_ptr->clone());
 }
 
-template<class P>
-std::shared_ptr<MeleeAttack<P>> AttackSet<P>::melee()
+template<class Ptr>
+std::shared_ptr<MeleeAttack<Ptr>> AttackSet<Ptr>::melee()
 {
     return melee_ptr;
 }
 
-template<class P>
-std::shared_ptr<RangeAttack<P>> AttackSet<P>::range()
+template<class Ptr>
+std::shared_ptr<RangeAttack<Ptr>> AttackSet<Ptr>::range()
 {
     return range_ptr;
 }
 
-template<class P>
-std::shared_ptr<HealingAttack<P>> AttackSet<P>::heal()
+template<class Ptr>
+std::shared_ptr<HealingAttack<Ptr>> AttackSet<Ptr>::heal()
 {
     return heal_ptr;
 }
 
-template<class P>
-void AttackSet<P>::new_melee()
+template<class Ptr>
+void AttackSet<Ptr>::new_melee()
 {
-    melee_ptr.reset(new MeleeAttack<P>());
+    melee_ptr.reset(new MeleeAttack<Ptr>());
 }
 
-template<class P>
-void AttackSet<P>::new_range()
+template<class Ptr>
+void AttackSet<Ptr>::new_range()
 {
-    range_ptr.reset(new RangeAttack<P>());
+    range_ptr.reset(new RangeAttack<Ptr>());
 }
 
-template<class P>
-void AttackSet<P>::new_heal()
+template<class Ptr>
+void AttackSet<Ptr>::new_heal()
 {
-    heal_ptr.reset(new HealingAttack<P>());
+    heal_ptr.reset(new HealingAttack<Ptr>());
 }
 
-template<class P>
-std::ostream& operator<<(std::ostream& os, AttackSet<P> const & attack_set)
+template<class Ptr>
+std::ostream& operator<<(std::ostream& os, AttackSet<Ptr> const & attack_set)
 {
     unsigned int i = 1;
 

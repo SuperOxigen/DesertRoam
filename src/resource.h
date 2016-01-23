@@ -1,10 +1,5 @@
 #pragma once
 
-typedef unsigned int Resource;
-
-#define NUM_RESOURCES 5
-
-
 /*------------------------
  * Function: 
  * Parameters: 
@@ -66,10 +61,26 @@ typedef unsigned int Resource;
  *-----------------------*/
 
 /*------------------------
+ * Typedef:  
+ * Description:
+ *     
+ *-----------------------*/
+
+/*------------------------
  * Constant: 
  * Description:
  *     
  *-----------------------*/
+
+
+/*------------------------
+ * Constant: NUM_RESOURCES
+ * Description:
+ *     The number of resource types
+ *     described by the enum
+ *     ResourceType
+ *-----------------------*/
+#define NUM_RESOURCES 5
 
 /*------------------------
  * Enum: ResourceType
@@ -82,4 +93,14 @@ enum ResourceType
 {
     GOLD, JEMS, FOOD, WATER, CLOTH
 };
+
+/*------------------------
+ * Typedef:  Resource
+ * Description:
+ *     Represent the quantity of a certain
+ *     type of resource.  Resource types
+ *     are described in the enum ResourceType
+ *-----------------------*/
+typedef unsigned int Resource;
+
 
